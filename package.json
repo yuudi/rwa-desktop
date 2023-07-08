@@ -1,0 +1,36 @@
+{
+  "name": "rclone-webui-angular-desktop",
+  "version": "0.1.0",
+  "author": "yuudi",
+  "description": "rclone webui angular",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "postinstall": "electron-builder install-app-deps",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^25.2.0",
+    "electron-builder": "^24.4.0"
+  },
+  "build": {
+    "appId": "dev.yuudi.rclone-webui-angular-desktop",
+    "win": {
+      "target": [
+        "nsis",
+        "7z"
+      ],
+      "icon": "icons/icon.ico"
+    },
+    "mac": {
+      "category": "public.app-category.utilities"
+    },
+    "files": [
+      "main.js"
+    ],
+    "extraResources": [
+      "bundle"
+    ]
+  }
+}

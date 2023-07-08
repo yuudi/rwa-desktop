@@ -1,0 +1,4 @@
+{
+	"name": "rclone-webui-angular",
+	"image": "mcr.microsoft.com/devcontainers/javascript-node:20"
+}
