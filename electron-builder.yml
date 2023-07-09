@@ -12,6 +12,8 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: RWA Desktop
+  artifactName: rwa-Windows-${arch}-Setup.${ext}
+  include: build/installer.nsh
 mac:
   target:
     - pkg

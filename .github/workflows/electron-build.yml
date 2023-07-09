@@ -72,6 +72,7 @@ jobs:
       - name: Build
         run: |
           npm clean-install
+          sh windows-winfsp/fetch-msi.sh
           sh build.sh
 
       - name: Upload Release Asset
