@@ -1,0 +1,28 @@
+appId: dev.yuudi.rclone-webui-angular-desktop
+artifactName: rwa-${os}-${arch}.${ext}
+win:
+  target:
+    - nsis
+    - 7z
+  icon: icons/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: RWA Desktop
+mac:
+  target:
+    - pkg
+  category: public.app-category.utilities
+  icon: icons/icon.png
+linux:
+  target:
+    - AppImage
+  category: Utility
+  icon: icons/icon.png
+files:
+  - main.js
+extraResources:
+  - bundle

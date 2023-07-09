@@ -58,7 +58,7 @@ const activeWindow = () => {
 app.whenReady().then(() => {
   // create tray
   const icon = nativeImage.createFromPath(
-    path.join(process.resourcesPath, "bundle", "favicon.ico")
+    path.join(process.resourcesPath, "bundle", "icon.ico")
   );
   const tray = new Tray(icon);
 
@@ -68,6 +68,7 @@ app.whenReady().then(() => {
   ]);
 
   tray.setToolTip("rwa desktop");
+  tray.on("click", activeWindow);
   tray.setContextMenu(contextMenu);
 
   // create backend process

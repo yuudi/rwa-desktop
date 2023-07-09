@@ -1,18 +1,20 @@
 #!/bin/sh
 
+set -ex
+
 platform=$1
 arch=$2
 
 exe="rclone"
 
 case "$platform" in
-"linux")
+"Linux")
     platform="linux"
     ;;
-"darwin")
+"macOS")
     platform="osx"
     ;;
-"win32")
+"Windows")
     platform="windows"
     exe="rclone.exe"
     ;;
@@ -35,9 +37,15 @@ case "$arch" in
     ;;
 esac
 
-mkdir -p tmp
+mkdir -p tmp/download
 cd tmp
-wget -O rclone.zip https://downloads.rclone.org/rclone-current-${platform}-${arch}.zip
-unzip rclone.zip
+rclone_exe_zip="rclone-${platform}-${arch}.zip"
+if [ -f "download/$rclone_exe_zip" ]; then
+    echo "rclone already downloaded"
+else
+    echo "downloading rclone"
+    curl -sLo download/$rclone_exe_zip https://downloads.rclone.org/rclone-current-${platform}-${arch}.zip
+fi
+unzip download/$rclone_exe_zip
 mv rclone-*-*/${exe} ../bundle/${exe}
-rm -rf *
+rm -rf rclone*
