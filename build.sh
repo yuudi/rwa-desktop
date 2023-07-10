@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -ex
+npm run build
 mkdir -p bundle
 cp icons/icon.ico bundle/icon.ico
 

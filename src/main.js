@@ -1,19 +1,25 @@
-const {
+"use strict";
+import {
   app,
   shell,
   BrowserWindow,
   Menu,
   Tray,
   nativeImage,
-  Notification,
-} = require("electron");
-const { spawn } = require("child_process");
-const path = require("path");
+  Notification as ElectronNotification,
+  ipcMain,
+} from "electron";
+import { spawn } from "child_process";
+import { join } from "path";
+import Schedular from "./schedular.js";
 
 const locked = app.requestSingleInstanceLock();
 if (!locked) {
   app.quit();
 }
+
+const resourcesPath =
+  process.env.NODE_ENV === "production" ? process.resourcesPath : __dirname;
 
 const randomString = (length) => {
   const chars = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -24,14 +30,20 @@ const randomString = (length) => {
   return result;
 };
 
+const executeId = randomString(16);
 const rcPassword = randomString(16);
+
+const schedular = new Schedular("rwa", rcPassword, 3000);
 
 const createWindow = () => {
   const window = new BrowserWindow({
     width: 800,
     height: 600,
     autoHideMenuBar: true,
-    icon: path.join(process.resourcesPath, "bundle", "favicon.ico"),
+    icon: join(resourcesPath, "bundle", "favicon.ico"),
+    webPreferences: {
+      preload: join(__dirname, "preload.js"),
+    },
   });
 
   // external url should be opened in default browser
@@ -58,7 +70,7 @@ const activeWindow = () => {
 app.whenReady().then(() => {
   // create tray
   const icon = nativeImage.createFromPath(
-    path.join(process.resourcesPath, "bundle", "icon.ico")
+    join(resourcesPath, "bundle", "icon.ico")
   );
   const tray = new Tray(icon);
 
@@ -72,8 +84,8 @@ app.whenReady().then(() => {
   tray.setContextMenu(contextMenu);
 
   // create backend process
-  const exePath = path.join(
-    process.resourcesPath,
+  const exePath = join(
+    resourcesPath,
     "bundle",
     process.platform === "win32" ? "rclone.exe" : "rclone"
   );
@@ -93,6 +105,21 @@ app.whenReady().then(() => {
   ];
   const backend = spawn(exePath, args);
 
+  // handle ipc
+  ipcMain.handle("execute-id", () => executeId);
+  ipcMain.handle("schedular-addTask", (event, task) => {
+    return schedular.addTask(task);
+  });
+  ipcMain.handle("schedular-getTasks", (event) => {
+    return schedular.getTasks();
+  });
+  ipcMain.handle("schedular-activateTask", (event, id) => {
+    return schedular.activateTask(id);
+  });
+  ipcMain.handle("schedular-deactivateTask", (event, id) => {
+    return schedular.deactivateTask(id);
+  });
+
   // create window
   createWindow();
 
@@ -102,7 +129,7 @@ app.whenReady().then(() => {
 
 app.on("window-all-closed", () => {
   // keep running on backend and notify user
-  const notification = new Notification({
+  const notification = new ElectronNotification({
     title: "rwa desktop",
     body: "rwa desktop is running on background",
   });

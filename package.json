@@ -6,9 +6,16 @@
   "license": "MIT",
   "main": "main.js",
   "scripts": {
+    "build:dev": "webpack --config webpack.main.config.js --mode development && webpack --config webpack.preload.config.js --mode development",
+    "build": "webpack --config webpack.main.config.js --mode production && webpack --config webpack.preload.config.js --mode production",
+    "start": "electron .",
     "postinstall": "electron-builder install-app-deps",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --publish never"
+  },
+  "dependencies": {
+    "node-cron": "^3.0.2",
+    "webpack-cli": "^5.1.4"
   },
   "devDependencies": {
     "electron": "^25.2.0",

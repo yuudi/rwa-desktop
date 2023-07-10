@@ -26,5 +26,6 @@ linux:
   icon: icons/icon.png
 files:
   - main.js
+  - preload.js
 extraResources:
   - bundle
