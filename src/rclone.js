@@ -15,14 +15,19 @@ class RcloneRc {
    * @returns {Promise<any>}
    */
   call(method, params) {
-    return fetch(`http://localhost:5572/${method}`, {
+    const options = {
       method: "POST",
       headers: {
         Authorization: this.auth,
-        "Content-Type": "application/json",
       },
-      body: JSON.stringify(params),
-    }).then((res) => res.json());
+    };
+    if (params) {
+      options.headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(params);
+    }
+    return fetch(`http://127.0.0.1:5572/${method}`, options).then((res) =>
+      res.json()
+    );
   }
 }
 

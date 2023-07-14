@@ -1,4 +1,4 @@
 {
-	"name": "rclone-webui-angular",
+	"name": "rwa-desktop",
 	"image": "mcr.microsoft.com/devcontainers/javascript-node:20"
 }

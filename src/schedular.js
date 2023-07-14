@@ -1,11 +1,12 @@
-import { existsSync, readFileSync, writeFile } from "fs";
-import { join } from "path";
 import { app } from "electron";
-import { schedule, getTasks } from "node-cron";
+import { existsSync, readFileSync, writeFile } from "fs";
+import { getTasks, schedule, validate } from "node-cron";
+import { join } from "path";
+import { log } from "./logging.js";
 import RC from "./rclone.js";
 
 /**
- * @typedef {{id: string, active: boolean, schedule: string, method: string, params: any}} Task
+ * @typedef {{id: string, active: boolean, schedule: string, operation: string, params: any}} Task
  */
 
 class SchedularStorage {
@@ -25,21 +26,21 @@ class SchedularStorage {
   }
   set(value) {
     this._value = value;
-    writeFile(this._filepath, JSON.stringify(value));
+    writeFile(this._filepath, JSON.stringify(value), () => {});
   }
 }
 
 class Schedular {
   /**
    *
-   * @param {string} username
-   * @param {string} password
+   * @param {RC} rc
    * @param {number} startupDelay
    */
-  constructor(username, password, startupDelay = 0) {
-    this._rc = new RC(username, password);
+  constructor(rc, startupDelay = 0) {
+    this._rc = rc;
     this._storage = new SchedularStorage();
     const tasks = this._storage.get();
+    log(`schedular: ${tasks.length} tasks loaded`);
     setTimeout(() => this._initTasks(tasks), startupDelay);
   }
 
@@ -64,8 +65,13 @@ class Schedular {
    *
    * @param {Task} task
    */
-  _runTask(task) {
-    this._rc.call(task.method, task.params);
+  async _runTask(task) {
+    const result = await this._rc.call(task.operation, task.params);
+    log(
+      `schedular: task ${task.operation} (${
+        task.id
+      }) executed, result: ${JSON.stringify(result)}`
+    );
   }
 
   /**
@@ -74,6 +80,10 @@ class Schedular {
    */
   getTasks() {
     return this._storage.get();
+  }
+
+  validate(expression) {
+    return validate(expression);
   }
 
   /**
@@ -85,6 +95,24 @@ class Schedular {
     if (task.active && task.schedule !== "@startup") {
       schedule(task.schedule, () => this._runTask(task));
     }
+  }
+
+  /**
+   *
+   * @param {string} id
+   * @returns
+   */
+  removeTask(id) {
+    const tasks = this._storage.get();
+    const index = tasks.findIndex((task) => task.id === id);
+    if (index === -1) {
+      return;
+    }
+    if (tasks[index].schedule !== "@startup") {
+      getTasks().get(id)?.stop();
+    }
+    tasks.splice(index, 1);
+    this._storage.set(tasks);
   }
 
   /**

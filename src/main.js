@@ -1,16 +1,18 @@
 "use strict";
+import { spawn } from "child_process";
 import {
-  app,
-  shell,
   BrowserWindow,
+  Notification as ElectronNotification,
   Menu,
   Tray,
-  nativeImage,
-  Notification as ElectronNotification,
+  app,
   ipcMain,
+  nativeImage,
+  shell,
 } from "electron";
-import { spawn } from "child_process";
 import { join } from "path";
+import { error } from "./logging.js";
+import RC from "./rclone.js";
 import Schedular from "./schedular.js";
 
 const locked = app.requestSingleInstanceLock();
@@ -33,7 +35,8 @@ const randomString = (length) => {
 const executeId = randomString(16);
 const rcPassword = randomString(16);
 
-const schedular = new Schedular("rwa", rcPassword, 3000);
+const rc = new RC("rwa", rcPassword);
+const schedular = new Schedular(rc, 3000);
 
 const createWindow = () => {
   const window = new BrowserWindow({
@@ -67,6 +70,21 @@ const activeWindow = () => {
   }
 };
 
+const quit = async () => {
+  try {
+    await rc.call("mount/unmountall");
+    await rc.call("core/quit");
+    backendProcess.kill();
+  } catch (e) {
+    error(e);
+  } finally {
+    app.quit();
+  }
+};
+
+/** @type {ChildProcessWithoutNullStreams} */
+let backendProcess;
+
 app.whenReady().then(() => {
   // create tray
   const icon = nativeImage.createFromPath(
@@ -76,7 +94,7 @@ app.whenReady().then(() => {
 
   const contextMenu = Menu.buildFromTemplate([
     { label: "open", click: activeWindow },
-    { label: "exit", click: () => app.quit() },
+    { label: "exit", click: quit },
   ]);
 
   tray.setToolTip("rwa desktop");
@@ -84,11 +102,8 @@ app.whenReady().then(() => {
   tray.setContextMenu(contextMenu);
 
   // create backend process
-  const exePath = join(
-    resourcesPath,
-    "bundle",
-    process.platform === "win32" ? "rclone.exe" : "rclone"
-  );
+  const exeBin = process.platform === "win32" ? "rclone.exe" : "rclone";
+  const exePath = join(resourcesPath, "bundle", exeBin);
   const args = [
     "rcd",
     "--rc-web-gui",
@@ -103,15 +118,21 @@ app.whenReady().then(() => {
     "--rc-pass",
     rcPassword,
   ];
-  const backend = spawn(exePath, args);
+  backendProcess = spawn(exePath, args);
 
   // handle ipc
   ipcMain.handle("execute-id", () => executeId);
+  ipcMain.handle("schedular-validate", (event, expression) => {
+    return schedular.validate(expression);
+  });
   ipcMain.handle("schedular-addTask", (event, task) => {
     return schedular.addTask(task);
   });
   ipcMain.handle("schedular-getTasks", (event) => {
     return schedular.getTasks();
+  });
+  ipcMain.handle("schedular-removeTask", (event, id) => {
+    return schedular.removeTask(id);
   });
   ipcMain.handle("schedular-activateTask", (event, id) => {
     return schedular.activateTask(id);

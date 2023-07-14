@@ -3,6 +3,7 @@
 # Compiled output
 /dist
 /out
+/build
 /bundle
 /tmp
 /out-tsc
@@ -44,3 +45,5 @@ Thumbs.db
 # target js in root
 /main.js
 /preload.js
+
+*.js.map
